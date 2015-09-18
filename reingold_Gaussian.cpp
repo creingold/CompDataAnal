@@ -16,8 +16,6 @@ It will then print out a histogram of the normal distribution generated.
 
 using namespace std;
 
-srand ( time ( 0 ) );
-
 const double g_pi = 3.1415926;
 
 // ##########################################################
@@ -27,7 +25,7 @@ const double g_pi = 3.1415926;
 const float rangeMin = -10.0;
 const float rangeMax = 10.0;
 const float binSize = 0.2;
-const float numberOfBins = 100;
+const int numberOfBins = 100;
 
 // ###########################################################
 
@@ -40,29 +38,37 @@ float Normal ( float mean, float stddev ){
 	float R2;
 	R2 = (float) rand() / (float) (RAND_MAX);
 
-	return mean + std * cos(2*g_pi*R1) * sqrt(-log(R2) );
+	return mean + stddev * cos(2*g_pi*R1) * sqrt(-log(R2) );
 }
 
-int main{
+int main(){
 	//This is where the histogram will be generated
 
 	float hist[numberOfBins] = {0};
 	const float mean = 0;
 	const float stddev = 2;
+	
+	srand ( time ( 0 ) );
 
 	//Filling the histogram
 	for ( int i = 0 ; i < 10000 ; i += 1 ){
 
 		float toFill = Normal(mean, stddev);
-		for ( int j = rangeMin ; j < rangeMax ; j += 1 ){
-			if ( toFill >= j * binSize && toFill < (j + 1)*binSize ){
+		for ( int j = 0 ; j < numberOfBins ; j += 1 ){
+			if ( toFill >= rangeMin + j * binSize && toFill < rangeMin + (j + 1)*binSize ){
 				hist[j] += 1;
-				break;
 			}
 		}
 		
 	}
 
+	//Printing the output
+	for ( int k = 0 ; k < numberOfBins ; k += 1 ){
+		float binStart = rangeMin + binSize * k;
+		cout << setprecision(2);
+		cout << k << '\t' << binStart << '\t' << setprecision(5) << hist[k] << endl;
+	}
 
 
+	return 0;
 }
