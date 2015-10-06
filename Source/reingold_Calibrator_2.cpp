@@ -18,6 +18,14 @@ const int numberOfBins = 100;
 const float rangeMin = 0;
 const float rangeMax = 1000;	
 
+float Calibrator ( float Channel , float aa , float bb){
+
+	float ene;
+		ene = Channel * aa + bb;
+	return ene;
+
+}
+
 int main(){
 	// Opening the data and checking that it was opened
 
@@ -41,11 +49,13 @@ int main(){
 
 		float energy[4];
 
-		for ( int h = 0 ; h < 4 ; h++ ){
-			energy[h] = detectorEnergy[h];
-		}
+		energy[0] = Calibrator( detectorEnergy[0] , 1.05 , -20 );
+		energy[1] = Calibrator( detectorEnergy[1] , 1.05 , 20 );
+		energy[2] = Calibrator( detectorEnergy[2] , .95 ,  -20 );
+		energy[3] = Calibrator ( detectorEnergy[3] , .95 , 20 );
 
 		// Filling in the Histogram array
+
 		for ( int i = 0 ; i < 4 ; i += 1 ){
 			for ( int j = 0 ; j < numberOfBins ; j += 1 ){
 				if ( energy[i] >= rangeMin + j * (rangeMax - rangeMin)/(float)numberOfBins && energy[i] < rangeMin + (j + 1) * (rangeMax - rangeMin)/(float) numberOfBins ){
@@ -57,5 +67,22 @@ int main(){
 
 	data.close();
 
+	// Printing the data
+
+	ofstream results("calibrated.dat");
+
+	if ( !results ){
+		cout << "Could not print results.  Check source code." << endl;
+		exit(1);
+	}
+
+	for ( int m = 0 ; m < numberOfBins; m += 1 ){
+		for ( int n = 0 ; n < 4 ; n += 1){
+			results << histogramMatrix[n][m] << '\t';
+		}
+		results << endl;
+		results.flush();
+	}
+	results.close();
 	return 0;
 }

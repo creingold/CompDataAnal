@@ -18,6 +18,17 @@ const int numberOfBins = 100;
 const float rangeMin = 0;
 const float rangeMax = 1000;	
 
+float * Calibrator ( const float *channel , const float *aa , const float *bb , const int detNo ){
+	float *energy = new float [detNo];
+
+	for ( int c = 0 ; c < detNo ; c++ ){
+		energy[c] = channel[c] * aa[c] + bb[c];
+	}
+
+	return energy;
+}
+
+
 int main(){
 	// Opening the data and checking that it was opened
 
@@ -31,7 +42,7 @@ int main(){
 	// Reading the data into a pointer, and then placing it into the histogram array
 
 	float detectorEnergy[4];
-
+	
 	int histogramMatrix[4][numberOfBins] = {0};
 
 	while ( !data.eof() ){
@@ -39,11 +50,10 @@ int main(){
 
 		// This is where I will calibrate;
 
-		float energy[4];
+		float slope[4] = { 1.05 , 1.05 , 0.95 , 0.95 };
+		float offset[4] = {-20 , 20 , -20 , 20 };
 
-		for ( int h = 0 ; h < 4 ; h++ ){
-			energy[h] = detectorEnergy[h];
-		}
+		float *energy = Calibrator( detectorEnergy , slope , offset , 4 );
 
 		// Filling in the Histogram array
 		for ( int i = 0 ; i < 4 ; i += 1 ){
@@ -53,9 +63,28 @@ int main(){
 				}
 			}
 		}
+		delete [] energy;
 	}
 
 	data.close();
+
+	// Printing the data
+
+	ofstream results("calibrated4.dat");
+
+	if ( !results ){
+		cout << "Could not print results.  Check source code." << endl;
+		exit(1);
+	}
+
+	for ( int m = 0 ; m < numberOfBins; m += 1 ){
+		for ( int n = 0 ; n < 4 ; n += 1){
+			results << histogramMatrix[n][m] << '\t';
+		}
+		results << endl;
+		results.flush();
+	}
+	results.close();
 
 	return 0;
 }
