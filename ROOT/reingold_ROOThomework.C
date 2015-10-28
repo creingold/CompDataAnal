@@ -9,21 +9,16 @@ This ROOT macro will do the following:
  - For each fitting procedure, plot the original spectrum, the background, and the spectrum after background subtraction.
 */
 
-bool reject;
-
-double quadReject( const int nPeaks , double *mins , double *maxs , double *x , double *par ){
-	for ( int i = 0 ; i < nPeaks ; i++ ){
-		if ( reject and x[0] > mins[i] and x[0] < maxs[i] ){
-			TF1::RejectPoint();
-			return 0;
-		}
-		
-		return par[0] + par[1] * x[0] + par[2] * x[0] * x[0];
+Double_t fQuad( Double_t *x , Double_t *par ){
+	if (  ( x[0] > 17 && x[0] <= 23) ||  ( x[0] > 47 && x[0] <= 53) || ( x[0] > 77 && x[0] <= 83) ){
+		TF1::RejectPoint();
+		return 0;
 	}
+	return par[0] + par[1] * x[0] + par[2] * x[0] * x[0];
 }
 
 
-int reingold_ROOThomework{
+void reingold_ROOThomework(){
 
 // Initalizing the Canvas
 
@@ -33,18 +28,18 @@ int reingold_ROOThomework{
 // Defining the function with three Gaussians on a quadratic background.
 
 	TF1 *func = new TF1("func", "pol2(0) + gaus(3) + gaus(6) + gaus(9)" , 0 , 100 );
-	double param[12] = {9 , 1 , -0.01 , 100 , 20 , 1 , 100 , 50 , 1 , 100 , 80 , 1};
+	Double_t param[12] = {9 , 1 , -0.01 , 100 , 20 , 1 , 100 , 50 , 1 , 100 , 80 , 1};
 	func->SetParameters(param);
 			//  quad, lin, const, A, mu, std , ... 
 // Generting and filling the histograms
 
 	TH1F *h0 = new TH1F("h0" , "Original Spectrum" , 100 , 0 , 100 );
-	for ( int i = 0 ; i < 2000 ; i++ ){
-		float rand = func->GetRandom();
+	for ( Int_t i = 0 ; i < 2000 ; i++ ){
+		Float_t rand = func->GetRandom();
 		h0->Fill(rand);
 	}
 	
-	for ( int j = 1 ; j < 4 ; j++ ){
+	for ( Int_t j = 1 ; j < 4 ; j++ ){
 		c1->cd(j);
 		h0->Draw();
 	}
@@ -56,7 +51,7 @@ int reingold_ROOThomework{
 	hPeaks->SetName("hPeaks");
 	hBkgrd->SetName("hBkgrd");
 
-	hBkgrd = h0->ShowBackground(25);
+	hBkgrd = h0->ShowBackground(15);
 
 	h0->Draw();
 	hBkgrd->Draw("same");
@@ -85,33 +80,22 @@ int reingold_ROOThomework{
 	hPeaks2->Draw();
 
 // Fitting the background excluding the peaks
-	c1 -> cd(6);
 
-	TSpectrum *spec = new TSpectrum(5);
-	TH1F * hPeaks3 = (TH1F*) h0 -> Clone();
-	TH1F * hBkg3 = (TH1F*) h0 ->Clone();
-	hPeaks3->SetName("hPeaks");
+	c1->cd(6);
+	TH1F *hPeaks3 = (TH1F*) h0->Clone();
+	TH1F *hBkg3 = (TH1F*) h0->Clone();
+
+	hPeaks3->SetName("hPeaks3");
 	hBkg3->SetName("hBkg3");
 
-	int peaksFound = spec->Search(hBkg3 , 2 , "" , 0.3 );
-
-	double *peakLocations = spec->GetPositionX();
+	TF1 *quadBack2 = new TF1("quadBack2" , fQuad , 0 , 100 ,3);
+	hBkg3->Fit(quadBack2,"R+");
 	
-	// Fit ignoring the peak locations
-
-	double ignoreMin[peaksFound] , ignoreMax[peaksFound];
-
-	for ( int k = 0 ; k < peaksFound ; k  ++ ){
-		ignoreMin[k] = peakLocations[k] - 20 ;
-		ignoreMax[k] = peakLocations[k] + 20 ;
-	}
-	
-	reject = true;
-	TF1 * quadExclude = new TF1("quadExclude" , quadReject(peaksFound , ignoreMin , ignoreMax ) , 0 , 100 );
-
-	hBkg3->Fit(quadExclude);
-i
 	hBkg3->Draw();
 
-	return 0;
+	c1->cd(9);
+
+	hPeaks3->Add(quadBack2 , -1 );
+	hPeaks3->Draw();
+
 }
